@@ -1,10 +1,10 @@
 import { PAGE_SIZE } from "../shared/lib/data";
 import { Response } from "../shared/lib/definitions";
 import { EndPoints } from "../shared/lib/definitions";
-import Pagination from "../shared/ui/pagination";
-import TableComponent from "../shared/ui/table";
+import Container from "../shared/ui/container";
+import { Inter } from "next/font/google";
 
-// SHORTNAME(2), SETTLEDATE(37), CURRENCYID(31), MATDATE(13), BUYBACKDATE(27)
+const inter = Inter({ subsets: ["latin"] });
 
 export default async function Page({
   searchParams,
@@ -14,17 +14,14 @@ export default async function Page({
     page?: string;
   };
 }) {
+  // If loading a variable font, you don't need to specify the font weight
+
   const currentPage = Number(searchParams?.page) || 1;
+  const query = searchParams?.query || "";
 
   return (
-    <main>
-      <p className="text-sky-400"></p>
-      <TableComponent currentPage={currentPage}></TableComponent>
-
-      <div className="mt-5 flex w-full justify-center">
-        {/* <Pagination totalPages={totalPages} /> */}
-        <Pagination totalPages={100} />
-      </div>
-    </main>
-  );
+    <div className={`h-screen ${inter.className}`}>
+      <Container currentPage={currentPage} query={query} />
+    </div>
+  ); //it's better to use swr in client components
 }
