@@ -1,32 +1,4 @@
-// Loading animation
-
-import { PAGE_SIZE } from "../lib/data";
-
-// const shimmer =
-//   "before:absolute before:inset-0 before:-translate-x-full before:animate-[shimmer_2s_infinite] before:bg-gradient-to-r before:from-transparent before:via-white/60 before:to-transparent";
-
-export function TableRowSkeleton() {
-  return (
-    <tr>
-      {/* Some text */}
-      <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900 ">
-        <div className="h-6 w-24 rounded bg-gray-100 animate-pulse"></div>
-      </td>
-      {/* Some text */}
-      <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900 ">
-        <div className="h-6 w-24 rounded bg-gray-100 animate-pulse"></div>
-      </td>
-      {/* Some text */}
-      <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900 ">
-        <div className="h-6 w-32 rounded bg-gray-100 animate-pulse"></div>
-      </td>
-      {/* Some text */}
-      <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900 ">
-        <div className="h-6 w-32 rounded bg-gray-100 animate-pulse"></div>
-      </td>
-    </tr>
-  );
-}
+import { PAGE_SIZE, TABLE_COLUMNS } from "../lib/data";
 
 export function BondsMobileSkeleton() {
   return (
@@ -51,7 +23,6 @@ export function BondsMobileSkeleton() {
     </div>
   );
 }
-
 export function BondsTableSkeleton() {
   return (
     <div className="overflow-x-auto">
@@ -61,62 +32,60 @@ export function BondsTableSkeleton() {
         <BondsMobileSkeleton />
         <BondsMobileSkeleton />
       </div>
-      <table className="min-w-full table-auto bg-white shadow-md rounded-lg overflow-hidden animate-pulse">
-        <thead className="bg-gray-100">
+      <table className="w-full text-sm text-left rtl:text-right bg-gray-500 dark:bg-gray-400 animate-pulse">
+        <thead className="h-4 text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
           <tr>
-            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ">
-              <div className="h-6 w-24 rounded bg-gray-100"></div>
-              {/* Some text */}
-            </th>
-            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              <div className="h-6 w-24 rounded bg-gray-100"></div>
-              {/* Some text */}
-            </th>
-            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              <div className="h-6 w-32 rounded bg-gray-100"></div>
-              {/* Some text */}
-            </th>
-            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              <div className="h-6 w-32 rounded bg-gray-100"></div>
-              {/* Some text */}
-            </th>
+            {Array.from({ length: TABLE_COLUMNS }, (_, i) => (
+              <TableHeadColumnSkeleton key={i} />
+            ))}
           </tr>
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
           {Array.from({ length: PAGE_SIZE }, (_, i) => (
-            <TableRowSkeleton key={i} />
+            <TableRowsSkeleton key={i} />
           ))}
         </tbody>
       </table>
     </div>
-
-    // button-like spinner
-    //   <div className="relative rounded-xl overflow-auto p-8">
-    //   <div className="flex items-center justify-center">
-    //     <div className="inline-flex items-center px-4 py-2 font-semibold leading-6 text-sm shadow rounded-md text-white bg-indigo-500 hover:bg-indigo-400 transition ease-in-out duration-150 cursor-not-allowed">
-    //       <svg
-    //         className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
-    //         xmlns="http://www.w3.org/2000/svg"
-    //         fill="none"
-    //         viewBox="0 0 24 24"
-    //       >
-    //         <circle
-    //           className="opacity-25"
-    //           cx="12"
-    //           cy="12"
-    //           r="10"
-    //           stroke="currentColor"
-    //           stroke-width="4"
-    //         ></circle>
-    //         <path
-    //           className="opacity-75"
-    //           fill="currentColor"
-    //           d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-    //         ></path>
-    //       </svg>
-    //       Processing...
-    //     </div>
-    //   </div>
-    // </div>
+  );
+}
+export function TableHeadColumnSkeleton() {
+  return (
+    <th scope="col" className="px-6 py-3">
+      <div className="flex items-center">
+        <svg
+          className="w-3 h-3 ms-1.5"
+          aria-hidden="true"
+          xmlns="http://www.w3.org/2000/svg"
+          fill="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path d="M8.574 11.024h6.852a2.075 2.075 0 0 0 1.847-1.086 1.9 1.9 0 0 0-.11-1.986L13.736 2.9a2.122 2.122 0 0 0-3.472 0L6.837 7.952a1.9 1.9 0 0 0-.11 1.986 2.074 2.074 0 0 0 1.847 1.086Zm6.852 1.952H8.574a2.072 2.072 0 0 0-1.847 1.087 1.9 1.9 0 0 0 .11 1.985l3.426 5.05a2.123 2.123 0 0 0 3.472 0l3.427-5.05a1.9 1.9 0 0 0 .11-1.985 2.074 2.074 0 0 0-1.846-1.087Z" />
+        </svg>
+        <span className="inline-block rounded bg-gray-500 dark:bg-gray-400 text-gray-500 dark:text-gray-400">
+          Some span text
+        </span>
+      </div>
+    </th>
+  );
+}
+export function TableRowsSkeleton() {
+  return (
+    <tr className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 hover:bg-blue-100">
+      {Array.from({ length: TABLE_COLUMNS }, (_, i) => (
+        <TableRowSkeleton key={i} />
+      ))}
+    </tr>
+  );
+}
+export function TableRowSkeleton() {
+  return (
+    <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap ">
+      <div className="px-2 py-4">
+        <span className="inline-block rounded bg-gray-900 text-gray-900 dark:bg-gray-200 dark:text-gray-200 animate-pulse">
+          Some table row text
+        </span>
+      </div>
+    </td>
   );
 }

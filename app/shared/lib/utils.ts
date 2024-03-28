@@ -1,4 +1,104 @@
-import { BondFieldNamesForID, BondFieldTitles } from "./definitions";
+import { DISPLAYED_INDICES, PAGE_SIZE } from "./data";
+import {
+  BondFieldNamesForID,
+  BondFieldTitles,
+  BondsSecurities,
+} from "./definitions";
+
+export const getSecurityDetails = (
+  fieldInfo?: (string | number)[][],
+  namesSrc?: BondsSecurities[],
+  dataSrc?: (string | number)[],
+  positions: number[] = []
+): { [key: string]: string | number } => {
+  //creates an object with of a form {short title : value} from desired positions of data entry
+  const fieldNames = convertToNamesObject(fieldInfo);
+  const shortNames: string[] | undefined = namesSrc?.map(
+    (el: any) => fieldNames[el.toUpperCase()].shortTitle
+  );
+
+  return createObjectFromArrays(
+    selectElementsFromPositions(positions, shortNames),
+    selectElementsFromPositions(positions, dataSrc)
+  );
+};
+
+export const getShortTitles = (
+  names: BondFieldTitles,
+  indices: number[],
+  source?: string[]
+): string[] => {
+  //takes array of field names, object that includes field names and short and full titles for them and returns short titles array
+  //for field names with specified indices
+  if (source)
+    return source
+      .filter((_, i) => indices.includes(i))
+      .map((el) => names[el].shortTitle);
+  return [];
+};
+
+export const selectElementsFromPositions = <T>(
+  positions: number[],
+  source?: T[]
+): T[] => {
+  // Create a new array by filtering the original array
+  // The filter callback checks if the current index is included in the positions array
+  if (source) return source?.filter((_, index) => positions.includes(index));
+  return [];
+};
+
+export const selectElementsByName = <T>(
+  array: T[][],
+  names: string[]
+): T[][] => {
+  // Create a new array by filtering the original array
+  // The filter callback checks if element name is included in names array
+  return array?.filter(([name]) => names.includes(name as string));
+};
+
+export const createObjectFromArrays = (
+  keys?: string[],
+  values?: any[]
+): { [key: string]: string | number } => {
+  if (keys)
+    return keys.reduce((obj, key, index) => {
+      obj[key] = values?.[index];
+      return obj;
+    }, {} as { [key: string]: string | number });
+  return {};
+};
+
+export const convertToNamesObject = (
+  fieldInfo?: (string | number)[][]
+): BondFieldTitles => {
+  //takes an array of arrays [name, shortTitle, Title] and returns an object {name : {shortTitle : value, title : value} }
+  const fieldNames: BondFieldTitles = {};
+
+  if (fieldInfo) {
+    for (let i = 0; i < fieldInfo.length; ++i) {
+      const name = fieldInfo[i][1] as string;
+      const names: BondFieldNamesForID = {
+        shortTitle: fieldInfo[i][2] as string,
+        Title: fieldInfo[i][3] as string,
+      };
+      fieldNames[name] = names;
+    }
+    return fieldNames;
+  }
+
+  return fieldNames;
+};
+
+export const shrinkSortedToPageSize = (
+  source: (string | number)[][],
+  currentPage: number,
+  sortAsc: boolean,
+  sortIndex?: number
+): (string | number)[][] => {
+  // return  part of source array that corresponds to current page, page size and sort order
+  sortData(DISPLAYED_INDICES[sortIndex || 0], source, sortAsc);
+  return shrinkToPageSize(source, currentPage, PAGE_SIZE);
+};
 
 export const sortData = (
   i: number,
@@ -17,22 +117,6 @@ export const sortData = (
   });
 };
 
-export const convertToNamesObject = (
-  fieldInfo: (string | number)[][]
-): BondFieldTitles => {
-  //takes an array of arrays [name, shortTitle, Title] and returns an object {name : {shortTitle : value, title : value} }
-  const fieldNames: BondFieldTitles = {};
-  for (let i = 0; i < fieldInfo.length; ++i) {
-    const name = fieldInfo[i][1] as string;
-    const names: BondFieldNamesForID = {
-      shortTitle: fieldInfo[i][2] as string,
-      Title: fieldInfo[i][3] as string,
-    };
-    fieldNames[name] = names;
-  }
-  return fieldNames;
-};
-
 export const shrinkToPageSize = (
   source: (string | number)[][],
   currentPage: number,
@@ -45,45 +129,31 @@ export const shrinkToPageSize = (
   );
 };
 
-export const getShortTitles = (
-  source: string[],
-  names: BondFieldTitles,
-  indices: number[]
-): string[] => {
-  //takes array of field names, object that includes field names and short and full titles for them and returns short titles array
-  //for field names with specified indices
-  return source
-    .filter((_, i) => indices.includes(i))
-    .map((el) => names[el].shortTitle);
-};
+export const getUniqueFilteredValues = (
+  query: string,
+  source?: (string | number)[][]
+): (string | number)[][] => {
+  //Filters source array according to query and returns only unique values
+  if (source) {
+    let filtered = new Set<number | string>();
 
-export const selectElementsFromPositions = <T>(
-  array: T[],
-  positions: number[]
-): T[] => {
-  // Create a new array by filtering the original array
-  // The filter callback checks if the current index is included in the positions array
-  return array?.filter((_, index) => positions.includes(index));
-};
-
-export const selectElementsByNames = <T>(
-  array: T[][],
-  names: string[]
-): T[][] => {
-  // Create a new array by filtering the original array
-  // The filter callback checks if element name is included in names array
-  return array?.filter(([name, index]) => names.includes(name as string));
-};
-
-// можно переделать и передавать только родительский узел и имена дочерних
-export const createObjectFromArrays = (
-  keys: string[],
-  values?: any[]
-): { [key: string]: string | number } => {
-  return keys.reduce((obj, key, index) => {
-    obj[key] = values?.[index];
-    return obj;
-  }, {} as { [key: string]: string | number });
+    return source
+      .filter((row) =>
+        row.some(
+          (el) =>
+            typeof el === "string" &&
+            el.toUpperCase().includes(query.toUpperCase())
+        )
+      )
+      .filter((row) => {
+        if (!filtered.has(row[0])) {
+          filtered.add(row[0]);
+          return true;
+        }
+        return false;
+      });
+  }
+  return [];
 };
 
 export const generatePagination = (currentPage: number, totalPages: number) => {
@@ -118,44 +188,3 @@ export const generatePagination = (currentPage: number, totalPages: number) => {
     totalPages,
   ];
 };
-
-// const columns = data[rootKey].columns
-//   .filter((_, i) => i == 2 || i == 13 || i == 31)
-//   .map((el) => fieldNames[el].shortTitle);
-
-// const currentPageArray = data[rootKey].data.filter(
-//   (_, i) => i >= currentPage * pageSize && i < (currentPage + 1) * pageSize
-// );
-
-// def flatten(self, j:dict, blockname:str):
-// """
-// Собираю двумерный массив (словарь)
-// :param j:
-// :param blockname:
-// :return:
-// """
-// return [{str.lower(k) : r[i] for i, k in enumerate(j[blockname]['columns'])} for r in j[blockname]['data']]
-
-// def rows_to_dict(self, j:dict, blockname:str, field_key='name', field_value='value'):
-// """
-// Для преобразования запросов типа /securities/:secid.json (спецификация бумаги)
-// в словарь значений
-// :param j:
-// :param blockname:
-// :param field_key:
-// :param field_value:
-// :return:
-// """
-// return {str.lower(r[field_key]) : r[field_value] for r in self.flatten(j, blockname)}
-
-// def get_bonds(self, page=1, limit=10):
-// """
-// Получаю облигации торгуемые на Мосбирже (stock_bonds)
-// без данных по облигации, только исин, эмитент и т.п.
-// :param page:
-// :param limit:
-// :return:
-// """
-// j = self.query("securities", group_by="group", group_by_filter="stock_bonds", limit=limit, start=(page-1)*limit)
-// f = self.flatten(j, 'securities')
-// return f

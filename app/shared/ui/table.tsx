@@ -1,45 +1,48 @@
 "use client";
 import React, { useState } from "react";
 import DetailsComponent from "@/app/bonds/ui/details";
-import { DISPLAYED_INDICES, PAGE_SIZE } from "../lib/data";
+import { DISPLAYED_INDICES, useBonds, useBondsSecurities } from "../lib/data";
 import {
+  convertToNamesObject,
+  getShortTitles,
   selectElementsFromPositions,
-  shrinkToPageSize,
-  sortData,
+  shrinkSortedToPageSize,
 } from "../lib/utils";
+import { BondFieldTitles, EndPoints } from "../lib/definitions";
 
 export default function TableComponent({
   currentPage,
   filteredFieldValues,
-  columns,
-  shortNames,
 }: {
   currentPage: number;
-  filteredFieldValues: any;
-  columns: string[];
-  shortNames: string[];
+  filteredFieldValues: (string | number)[][];
 }) {
-  let currentPageArray: (string | number)[][] = [];
-  let rows: (string | number)[][] = [];
+  const { bondsSecurities } = useBondsSecurities(EndPoints.BondsSecurities);
+  const { bonds } = useBonds(EndPoints.Bonds);
 
   const [isDetailsOpen, setDetailsOpen] = useState<boolean>(false);
   const [selectedIndex, setSelectedIndex] = useState<number>(0);
   const [sortIndex, setSortIndex] = useState<number>();
   const [sortAsc, setSortAsc] = useState<boolean>(true);
 
-  sortData(DISPLAYED_INDICES[sortIndex || 0], filteredFieldValues, sortAsc);
+  const fieldNames: BondFieldTitles = convertToNamesObject(
+    bonds?.securities.data
+  );
 
-  currentPageArray = shrinkToPageSize(
+  const columns: string[] = getShortTitles(
+    fieldNames,
+    DISPLAYED_INDICES,
+    bondsSecurities?.securities.columns
+  );
+
+  let currentPageArray = shrinkSortedToPageSize(
     filteredFieldValues,
     currentPage,
-    PAGE_SIZE
+    sortAsc,
+    sortIndex
   );
 
-  rows = currentPageArray.map((el) =>
-    selectElementsFromPositions(el, DISPLAYED_INDICES)
-  );
-
-  if (rows.length > 0)
+  if (currentPageArray.length > 0)
     return (
       <div>
         <div className="overflow-x-auto">
@@ -55,26 +58,18 @@ export default function TableComponent({
             <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
               <tr>
                 {columns.map((title, i) => (
-                  <th scope="col" className="px-6 py-3" key={i}>
+                  <th scope="col" className="px-6 py-3 h-3 w-1/4" key={i}>
                     <div className="flex items-center">
                       <a
                         href="#"
                         onClick={() => {
                           setSortAsc(!sortAsc);
                           setSortIndex(i);
-                          sortData(
-                            DISPLAYED_INDICES[sortIndex || 0],
-                            filteredFieldValues,
-                            sortAsc
-                          );
-
-                          currentPageArray = shrinkToPageSize(
+                          currentPageArray = shrinkSortedToPageSize(
                             filteredFieldValues,
                             currentPage,
-                            PAGE_SIZE
-                          );
-                          rows = currentPageArray.map((el) =>
-                            selectElementsFromPositions(el, DISPLAYED_INDICES)
+                            sortAsc,
+                            sortIndex
                           );
                         }}
                       >
@@ -95,31 +90,32 @@ export default function TableComponent({
               </tr>
             </thead>
             <tbody>
-              {rows.map((row, i) => (
-                <tr
-                  key={i}
-                  className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 hover:bg-blue-100"
-                  onClick={() => {
-                    setDetailsOpen(true);
-                    setSelectedIndex(i);
-                  }}
-                >
-                  {row.map((cell, j) => (
-                    <td
-                      className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white "
-                      key={j}
-                    >
-                      <div className="px-6 py-4">{cell}</div>
-                    </td>
-                  ))}
-                </tr>
-              ))}
+              {currentPageArray
+                .map((el) => selectElementsFromPositions(DISPLAYED_INDICES, el)) //select specified data fields from entries
+                .map((row, i) => (
+                  <tr
+                    key={i}
+                    className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 hover:bg-blue-100"
+                    onClick={() => {
+                      setDetailsOpen(true);
+                      setSelectedIndex(i);
+                    }}
+                  >
+                    {row.map((cell, j) => (
+                      <td
+                        className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white "
+                        key={j}
+                      >
+                        <div className="px-2 py-4">{cell}</div>
+                      </td>
+                    ))}
+                  </tr>
+                ))}
             </tbody>
           </table>
           <DetailsComponent
             isOpen={isDetailsOpen}
             detailsData={currentPageArray[selectedIndex]}
-            shortNames={shortNames}
           />
         </div>
       </div>

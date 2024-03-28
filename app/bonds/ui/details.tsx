@@ -4,11 +4,9 @@ import DetailsContentComponent from "./detailsContent";
 export default function DetailsComponent({
   isOpen,
   detailsData,
-  shortNames,
 }: {
   isOpen: boolean;
   detailsData: (string | number)[];
-  shortNames: string[];
 }) {
   return (
     <div
@@ -21,11 +19,7 @@ export default function DetailsComponent({
           isOpen ? "translate-x-0" : "translate-x-full"
         }`}
       >
-        {/* Window content*/}
-        <DetailsContentComponent
-          detailsData={detailsData}
-          shortNames={shortNames}
-        />
+        <DetailsContentComponent detailsData={detailsData} />
       </div>
     </div>
   );

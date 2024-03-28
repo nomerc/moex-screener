@@ -1,12 +1,16 @@
 import useSWR from "swr";
-import { EndPoints } from "./definitions";
+import { Bonds, BondsSecurities, EndPoints } from "./definitions";
 import useSWRImmutable from "swr/immutable";
 
 export const PAGE_SIZE = 7;
-export const DISPLAYED_INDICES = [0, 2, 13, 25]; //Array.from(Array(32).keys());
+export const TABLE_COLUMNS = 4;
+export const DISPLAYED_INDICES = [0, 2, 13, 25];
 export const BOND_INFO_INDICES = [
   0, 1, 2, 5, 6, 7, 10, 13, 14, 15, 16, 17, 18, 19, 24,
 ];
+export const HISTORY_INDICES = [4, 6, 7, 12, 14, 36];
+export const EXTRA_INDICES = [7, 12];
+
 export const BOND_INFO_NAMES = [
   "SECID",
   "NAME",
@@ -29,17 +33,17 @@ export const BOND_INFO_NAMES = [
   "COUPONDATE",
   "TYPENAME",
 ];
-export const EXTRA_INDICES = [7, 12];
 
 export async function fetcher(endpoint: string) {
   const response = await fetch(endpoint);
   const data = await response.json();
   return data;
 }
-export function useBonds(id: string) {
-  const { data, error, isLoading } = useSWR(
+
+export function useBondsSecurities(id: string) {
+  const { data, error, isLoading } = useSWR<BondsSecurities>(
     `/api/user/${id}`,
-    () => fetcher(EndPoints.Bonds),
+    () => fetcher(EndPoints.BondsSecurities),
     {
       revalidateIfStale: false,
       revalidateOnFocus: false,
@@ -50,89 +54,21 @@ export function useBonds(id: string) {
   );
 
   return {
+    bondsSecurities: data,
+    bondsSecuritiesLoading: isLoading,
+    bondsSecuritiesError: error,
+  };
+}
+
+export function useBonds(id: string) {
+  const { data, error, isLoading } = useSWRImmutable<Bonds>(
+    `/api/user/${id}`,
+    () => fetcher(EndPoints.Bonds)
+  );
+
+  return {
     bonds: data,
     bondsLoading: isLoading,
     bondsError: error,
   };
 }
-export function useBondNames(id: string) {
-  const { data, error, isLoading } = useSWR(
-    `/api/user/${id}`,
-    () => fetcher(EndPoints.BondNames),
-    {
-      revalidateIfStale: false,
-      revalidateOnFocus: false,
-      revalidateOnReconnect: true,
-      revalidateOnMount: true,
-    }
-  );
-
-  return {
-    bondNames: data,
-    bondNamesLoading: isLoading,
-    bondNamesError: error,
-  };
-}
-export async function fetchFromEndpoint(endpoint: string) {
-  const res = await fetch(endpoint, { cache: "no-store" });
-
-  if (!res.ok) {
-    throw new Error("Failed to fetch data");
-  }
-  return res.json();
-}
-
-// export function useSecurity(id: string, secid: string) {
-//   const { data, error, isLoading } = useSWRImmutable<Security>(
-//     `/api/user/${id}${secid}`,
-//     () => fetcher(EndPoints.Security + secid + "/.json")
-//   );
-
-//   return {
-//     security: data,
-//     securityLoading: isLoading,
-//     securityError: error,
-//   };
-// }
-// export function useSecurityHistory(id: string, secid: string) {
-//   const { data, error, isLoading } = useSWR(
-//     `/api/user/${id}`,
-//     () => fetcher(EndPoints.SecurityHistory + secid + ".json"),
-//     {
-//       revalidateIfStale: false,
-//       revalidateOnFocus: false,
-//       revalidateOnReconnect: true,
-//       revalidateOnMount: true,
-//     }
-//   );
-
-//   return {
-//     securityHistory: data,
-//     securityHistoryLoading: isLoading,
-//     securityHistoryError: error,
-//   };
-// }
-// export function useSecurityHistoryFromIndex(
-//   id: string,
-//   secid: string,
-//   index: number
-// ) {
-//   const { data, error, isLoading } = useSWR(
-//     `/api/user/${id}${index}`,
-//     () => fetcher(`${EndPoints.SecurityHistory}${secid}.json?START=${index}`),
-//     {
-//       revalidateIfStale: false,
-//       revalidateOnFocus: false,
-//       revalidateOnReconnect: true,
-//       revalidateOnMount: true,
-//     }
-//   );
-
-//   console.log(`${EndPoints.SecurityHistory}${secid}.json?START=${index}`);
-
-//   return {
-//     sHFI: data,
-//     sHFILoading: isLoading,
-//     sHFIError: error,
-//   };
-// }

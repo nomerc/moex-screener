@@ -1,13 +1,7 @@
 "use client";
-import React, { Suspense } from "react";
-import { BondFieldTitles, EndPoints } from "@/app/shared/lib/definitions";
-import {
-  useBonds,
-  useBondNames,
-  PAGE_SIZE,
-  DISPLAYED_INDICES,
-} from "../lib/data";
-import { convertToNamesObject, getShortTitles } from "../lib/utils";
+import { EndPoints } from "@/app/shared/lib/definitions";
+import { useBonds, PAGE_SIZE, useBondsSecurities } from "../lib/data";
+import { getUniqueFilteredValues } from "../lib/utils";
 
 import TableComponent from "./table";
 import Pagination from "./pagination";
@@ -21,64 +15,28 @@ export default function Container({
   currentPage: number;
   query: string;
 }) {
+  const { bondsSecurities, bondsSecuritiesError, bondsSecuritiesLoading } =
+    useBondsSecurities(EndPoints.BondsSecurities);
   const { bonds, bondsError, bondsLoading } = useBonds(EndPoints.Bonds);
-  const { bondNames, bondNamesError, bondNamesLoading } = useBondNames(
-    EndPoints.BondNames
-  );
 
-  //можно сделать таблицу с настраиваемыми колонками, позволить выбрать колонки из списка чек боксами
-  //выделить в utils функции с рассчетами из container и table
+  if (bondsError) throw new Error("Failed to load bond names information");
+  if (bondsSecuritiesError) throw new Error("Failed to load bonds information");
 
   let totalPages = 0;
-  let rootKey: string;
-  let columns: string[] = [];
-  let shortNames = [];
-  let fieldNames: BondFieldTitles = {};
-  let allFieldValues: (string | number)[][] = [];
   let filteredFieldValues: (string | number)[][] = [];
 
-  if (bondsError) throw new Error("Failed to load bonds information");
-  if (bondNamesError) throw new Error("Failed to load bond names information");
-
-  if (!bondNamesLoading && !bondsLoading) {
-    fieldNames = convertToNamesObject(
-      bondNames[Object.keys(bondNames)[2]].data
+  if (!bondsSecuritiesLoading && !bondsLoading) {
+    filteredFieldValues = getUniqueFilteredValues(
+      query,
+      bondsSecurities?.securities.data
     );
 
-    rootKey = Object.keys(bonds)[0];
-    allFieldValues = bonds[rootKey].data;
-    filteredFieldValues = allFieldValues.filter((row) =>
-      row.some(
-        (el) =>
-          typeof el === "string" &&
-          el.toUpperCase().includes(query.toUpperCase())
-      )
-    );
-    //exclude same values
-    //выделить функцию в utils
-    let filtered = new Set<number | string>();
-    filteredFieldValues = filteredFieldValues.filter((row) => {
-      if (!filtered.has(row[0])) {
-        filtered.add(row[0]);
-        return true;
-      }
-      return false;
-    });
-
-    columns = getShortTitles(
-      bonds[rootKey].columns,
-      fieldNames,
-      DISPLAYED_INDICES
-    );
-
-    totalPages = Math.ceil(filteredFieldValues.length / PAGE_SIZE);
-
-    shortNames = bonds[rootKey].columns.map(
-      (el: any) => fieldNames[el].shortTitle
-    );
+    filteredFieldValues
+      ? (totalPages = Math.ceil(filteredFieldValues.length / PAGE_SIZE))
+      : (totalPages = 0);
   }
 
-  if (!bondNamesLoading && !bondsLoading) {
+  if (!bondsSecuritiesLoading && !bondsLoading) {
     return (
       <main className="dark:bg-gray-900 h-full">
         <Search placeholder="Search bonds..." />;
@@ -86,8 +44,6 @@ export default function Container({
         <TableComponent
           currentPage={currentPage}
           filteredFieldValues={filteredFieldValues}
-          columns={columns}
-          shortNames={shortNames}
         ></TableComponent>
         <div className="mt-5 flex w-full justify-center">
           <Pagination totalPages={totalPages} />
@@ -95,5 +51,13 @@ export default function Container({
       </main>
     );
   }
-  return <Loading />;
+  return (
+    <main className="dark:bg-gray-900 h-full">
+      <Search placeholder="Search bonds..." />;<p className="text-sky-400"></p>
+      <Loading />
+      <div className="mt-5 flex w-full justify-center">
+        <Pagination totalPages={10} />
+      </div>
+    </main>
+  );
 }

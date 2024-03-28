@@ -1,41 +1,45 @@
-import { BOND_INFO_NAMES, EXTRA_INDICES, fetcher } from "@/app/shared/lib/data";
+import {
+  BOND_INFO_NAMES,
+  EXTRA_INDICES,
+  HISTORY_INDICES,
+  fetcher,
+  useBonds,
+  useBondsSecurities,
+} from "@/app/shared/lib/data";
 import { EndPoints, SecurityHistory } from "@/app/shared/lib/definitions";
 import {
-  createObjectFromArrays,
-  selectElementsByNames,
-  selectElementsFromPositions,
+  getSecurityDetails,
+  selectElementsByName,
 } from "@/app/shared/lib/utils";
-import Loading from "@/app/shared/ui/loading";
 import Spinner from "@/app/shared/ui/spinner";
 import React from "react";
 import useSWR from "swr";
 
 export default function DetailsContentComponent({
   detailsData,
-  shortNames,
 }: {
   detailsData: (string | number)[];
-  shortNames: string[];
 }) {
-  let details: { [key: string]: string | number } = {};
-  const detailsExtra = createObjectFromArrays(
-    selectElementsFromPositions(shortNames, EXTRA_INDICES),
-    selectElementsFromPositions(detailsData, EXTRA_INDICES)
-  );
+  const { bondsSecurities } = useBondsSecurities(EndPoints.BondsSecurities);
+  const { bonds } = useBonds(EndPoints.Bonds);
 
   const secKey: string = EndPoints.Security + detailsData?.[0];
   const histKey: string = EndPoints.SecurityHistory + detailsData?.[0];
+
   const {
     data: security,
     error: securityError,
     isLoading: securityLoading,
   } = useSWR(`${secKey}.json`, fetcher);
+  if (securityError) throw new Error("Failed to load security information");
 
   const { data: cursor, error: cursorError } = useSWR(
     `${histKey}.json`,
     fetcher
   );
+  if (cursorError) throw new Error("Failed to load cursor information");
 
+  //getting last entry from trades history
   const { data: history, error: historyError } = useSWR<SecurityHistory>(
     () =>
       `${histKey}.json?START=${
@@ -43,16 +47,30 @@ export default function DetailsContentComponent({
       }&LIMIT=1`,
     fetcher
   );
+  if (historyError) throw new Error("Failed to load history information");
+
+  //creating first object using corresponding data for final security data object
+  const detailsExtra = getSecurityDetails(
+    bonds?.securities.data,
+    bondsSecurities?.securities.columns,
+    detailsData,
+    EXTRA_INDICES
+  );
+
+  //creating second object using corresponding data for final security data object
+  const detailsExtra_ = getSecurityDetails(
+    bonds?.history.data,
+    history?.history.columns,
+    history?.history.data[0],
+    HISTORY_INDICES
+  );
 
   let securityData: (string | number)[][] = [];
+  let details: { [key: string]: string | number } = {};
 
-  // if (securityError) throw new Error("Failed to load security information");
-  // if (cursorError) throw new Error("Failed to load cursor information");
-  //TODO add notification security not found with search interface instead of current
-  // if (historyError) throw new Error("Failed to load history information");
-
+  //creating third object using corresponding data for final security data object
   if (!securityLoading) {
-    securityData = selectElementsByNames(
+    securityData = selectElementsByName(
       security?.description.data,
       BOND_INFO_NAMES
     );
@@ -61,20 +79,8 @@ export default function DetailsContentComponent({
     });
   }
 
-  if (history) {
-    const securityHistory = history.history.data;
-
-    const a = securityHistory[securityHistory.length - 1];
-    details["Количество сделок"] = a[4];
-    details["Минимальная цена % от номинала"] = a[6];
-    details["Максимальная цена % от номинала"] = a[7];
-    details["Доходность на момент закрытия"] = a[12];
-    details["Объем торгов"] = a[14];
-    details["Дата выкупа"] = a[28];
-    details["Валюта номинала"] = a[36];
-  }
-
-  details = { ...details, ...detailsExtra };
+  //merge our object into final one
+  details = { ...details, ...detailsExtra, ...detailsExtra_ };
 
   if (!securityLoading && history) {
     return (
@@ -115,10 +121,5 @@ export default function DetailsContentComponent({
     );
   }
 
-  // return <Loading />;
-  return (
-    // <div className="fixed top-0 right-0 bottom-0 left-0 bg-gray-700/75">
-    <Spinner />
-    // </div>
-  );
+  return <Spinner />;
 }
