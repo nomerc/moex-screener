@@ -1,6 +1,3 @@
-import { PAGE_SIZE } from "../shared/lib/data";
-import { Response } from "../shared/lib/definitions";
-import { EndPoints } from "../shared/lib/definitions";
 import Container from "../shared/ui/container";
 import { Inter } from "next/font/google";
 
